@@ -15,7 +15,10 @@ apply plugin: 'idea'
 apply plugin: 'gradle-autojar'
 apply plugin: 'cobertura'
 apply plugin: 'coveralls'
+apply plugin: 'application'
 
+
+mainClassName = "com.github.rholder.esthree.Main"
 sourceCompatibility = 1.6
 targetCompatibility = 1.6
 

@@ -16,6 +16,7 @@
 
 package com.github.rholder.esthree.cli;
 
+import com.github.rholder.esthree.command.BulkPut;
 import com.github.rholder.esthree.command.Put;
 import com.github.rholder.esthree.progress.MutableProgressListener;
 import com.github.rholder.esthree.progress.PrintingProgressListener;
@@ -25,9 +26,7 @@ import io.airlift.command.Arguments;
 import io.airlift.command.Command;
 import io.airlift.command.Option;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,41 +63,72 @@ public class BulkPutCommand extends EsthreeCommand {
 
     @Override
     public void parse() {
+        System.out.println("Start of parse");
         if (help) {
             showUsage(commandMetadata);
             return;
         }
-
+        System.out.println("Here!");
         if (firstNonNull(parameters, emptyList()).size() == 0) {
             showUsage(commandMetadata);
             throw new IllegalArgumentException("No arguments specified");
         }
 
         // TODO foo s3://bucket  <--- support this?
+        System.out.println("Here!");
         if (parameters.size() != 2) {
             output.print("Invalid number of arguments");
             throw new RuntimeException("Invalid number of arguments");
         }
-        LineIterator iter;
+        outputFilesList = new File(parameters.get(0));
+        System.out.println("Here! (" + outputFilesList + ")");
         try {
-            iter = FileUtils.lineIterator(outputFilesList);
+            BufferedReader br = new BufferedReader(new FileReader(outputFilesList));
+            String line;
+            while ((line = br.readLine()) != null) {
+                File test = FileUtils.getFile(line);
+                if (!test.exists() || test.isDirectory()){
+                    output.print("File" + test.getName() + " in input list does not exist or is a directory and was skipped");
+                }
+                else {
+                    outputFilesWithKey.put(test, "");
+                }
+            }
         }catch (IOException e){
             System.out.println("IOException with outputFilesList");
             showUsage(commandMetadata);
             return;
         }
-        while (iter.hasNext()) {
-            File output = FileUtils.getFile(iter.next());
-            if (!output.exists() || output.isDirectory()){
-                System.out.print("WARNING: File" + output.getName() + "  in input list does not exist or is a directory and was skipped");
+
+        /*try {
+            System.out.println(outputFilesList.toString());
+            iter = FileUtils.lineIterator(outputFilesList);
+            System.out.println("Here!");
+        }catch (IOException e){
+            System.out.println("IOException with outputFilesList");
+            showUsage(commandMetadata);
+            return;
+        }*/
+        System.out.println("Here!");
+        /*while (iter.hasNext()) {
+            File test = FileUtils.getFile(iter.next());
+            if (!test.exists() || test.isDirectory()){
+                output.print("File" + test.getName() + " in input list does not exist or is a directory and was skipped");
             }
             else {
                 outputFilesWithKey.put(new File(iter.next()), "");
             }
+        }*/
+
+        System.out.println("Here!");
+        if (outputFilesWithKey.isEmpty()){
+            output.print("No valid files in input list");
+            return;
         }
 
         String target = parameters.get(1);
 
+        System.out.println("Here!");
         bucket = S3PathUtils.getBucket(target);
         if (bucket == null) {
             output.print("Could not parse bucket name");
@@ -141,17 +171,17 @@ public class BulkPutCommand extends EsthreeCommand {
                 convertedMetadata.put(metadata.get(i), metadata.get(i + 1));
             }
         }
+
+        System.out.println(outputFilesWithKey);
     }
 
     @Override
     public void run() {
         if (!help) {
             try {
-                for (Map.Entry<File,String> entry : outputFilesWithKey.entrySet()){
-                    new Put(amazonS3Client, bucket, entry.getValue(), entry.getKey(), convertedMetadata, sse)
-                            .withProgressListener(progressListener)
-                            .call();
-                }
+                new BulkPut(amazonS3Client, bucket, outputFilesWithKey, convertedMetadata, sse)
+                        .withProgressListener(progressListener)
+                        .call();
                 /*new Put(amazonS3Client, bucket, key, outputFile, convertedMetadata, sse)
                         .withProgressListener(progressListener)
                         .call();*/
