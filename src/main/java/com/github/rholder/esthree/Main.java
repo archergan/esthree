@@ -18,14 +18,7 @@ package com.github.rholder.esthree;
 
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.github.rholder.esthree.cli.EsthreeCommand;
-import com.github.rholder.esthree.cli.GetCommand;
-import com.github.rholder.esthree.cli.GetMultipartCommand;
-import com.github.rholder.esthree.cli.HelpCommand;
-import com.github.rholder.esthree.cli.LbCommand;
-import com.github.rholder.esthree.cli.LsCommand;
-import com.github.rholder.esthree.cli.MbCommand;
-import com.github.rholder.esthree.cli.PutCommand;
+import com.github.rholder.esthree.cli.*;
 import io.airlift.command.Cli;
 import io.airlift.command.model.MetadataLoader;
 
@@ -59,7 +52,8 @@ public class Main {
                         LbCommand.class,
                         LsCommand.class,
                         MbCommand.class,
-                        PutCommand.class)
+                        PutCommand.class,
+                        BulkPutCommand.class)
                 .build();
     }
 
