@@ -79,7 +79,6 @@ public class Main {
         try {
             parseGlobalCli(args);
 
-            System.out.println("After GlobalCli: " + command.toString());
             command.parse();
             command.run();
         } catch (Exception e) {

@@ -57,31 +57,35 @@ public class BulkPutCommand extends EsthreeCommand {
     public String bucket;
     //public String key;
     public File outputFilesList;
-    public Map<File, String> outputFilesWithKey;
+    public Map<File, String> outputFilesWithKey = new HashMap<File, String>();
     public MutableProgressListener progressListener;
-    public Map<String, String> convertedMetadata;
+    public Map<String, String> convertedMetadata = new HashMap<String, String>();
 
     @Override
     public void parse() {
-        System.out.println("Start of parse");
         if (help) {
             showUsage(commandMetadata);
             return;
         }
-        System.out.println("Here!");
         if (firstNonNull(parameters, emptyList()).size() == 0) {
             showUsage(commandMetadata);
             throw new IllegalArgumentException("No arguments specified");
         }
 
         // TODO foo s3://bucket  <--- support this?
-        System.out.println("Here!");
         if (parameters.size() != 2) {
             output.print("Invalid number of arguments");
             throw new RuntimeException("Invalid number of arguments");
         }
         outputFilesList = new File(parameters.get(0));
-        System.out.println("Here! (" + outputFilesList + ")");
+        if (!outputFilesList.exists()){
+            output.print("Input file list does not exist");
+            throw new RuntimeException("Input file list does not exist");
+        }
+        else if (outputFilesList.length() == 0){
+            output.print("Input file list is empty");
+            throw new RuntimeException("Input file list is empty");
+        }
         try {
             BufferedReader br = new BufferedReader(new FileReader(outputFilesList));
             String line;
@@ -95,11 +99,10 @@ public class BulkPutCommand extends EsthreeCommand {
                 }
             }
         }catch (IOException e){
-            System.out.println("IOException with outputFilesList");
-            showUsage(commandMetadata);
-            return;
+            output.print("IOException with input file");
+            e.printStackTrace();
+            throw new RuntimeException("Problem with input file");
         }
-
         /*try {
             System.out.println(outputFilesList.toString());
             iter = FileUtils.lineIterator(outputFilesList);
@@ -109,7 +112,6 @@ public class BulkPutCommand extends EsthreeCommand {
             showUsage(commandMetadata);
             return;
         }*/
-        System.out.println("Here!");
         /*while (iter.hasNext()) {
             File test = FileUtils.getFile(iter.next());
             if (!test.exists() || test.isDirectory()){
@@ -120,15 +122,13 @@ public class BulkPutCommand extends EsthreeCommand {
             }
         }*/
 
-        System.out.println("Here!");
         if (outputFilesWithKey.isEmpty()){
             output.print("No valid files in input list");
-            return;
+            throw new RuntimeException("No valid files in input list");
         }
 
         String target = parameters.get(1);
 
-        System.out.println("Here!");
         bucket = S3PathUtils.getBucket(target);
         if (bucket == null) {
             output.print("Could not parse bucket name");
@@ -165,14 +165,13 @@ public class BulkPutCommand extends EsthreeCommand {
             progressListener = new PrintingProgressListener(output, new TimeProvider());
         }
 
-        convertedMetadata = new HashMap<String, String>();
         if (metadata != null) {
             for (int i = 0; i < metadata.size(); i += 2) {
                 convertedMetadata.put(metadata.get(i), metadata.get(i + 1));
             }
         }
 
-        System.out.println(outputFilesWithKey);
+        //System.out.println(outputFilesWithKey);
     }
 
     @Override
